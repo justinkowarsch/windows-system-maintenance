@@ -90,17 +90,22 @@ function Set-RepositorySettings {
     }
     
     if ($settings.Count -gt 0) {
-        $cmd = "gh repo edit $Repository " + ($settings -join " ")
+        $arguments = @("repo", "edit", $Repository) + $settings
         
         if ($DryRun) {
-            Write-Host "DRY RUN: $cmd" -ForegroundColor Magenta
+            Write-Host "DRY RUN: gh $($arguments -join ' ')" -ForegroundColor Magenta
         } else {
             Write-Host "Applying repository settings..." -ForegroundColor Cyan
-            Invoke-Expression $cmd
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "✅ Repository settings updated" -ForegroundColor Green
-            } else {
-                Write-Warning "Failed to update repository settings"
+            try {
+                & gh @arguments
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "✅ Repository settings updated" -ForegroundColor Green
+                } else {
+                    Write-Warning "Failed to update repository settings (exit code: $LASTEXITCODE)"
+                }
+            }
+            catch {
+                Write-Error "Failed to execute gh command: $_"
             }
         }
     }
@@ -108,17 +113,22 @@ function Set-RepositorySettings {
     # Set repository topics
     if ($RepoConfig.topics -and $RepoConfig.topics.Count -gt 0) {
         $topicsString = ($RepoConfig.topics -join ",")
-        $cmd = "gh repo edit $Repository --add-topic `"$topicsString`""
+        $arguments = @("repo", "edit", $Repository, "--add-topic", $topicsString)
         
         if ($DryRun) {
-            Write-Host "DRY RUN: $cmd" -ForegroundColor Magenta
+            Write-Host "DRY RUN: gh $($arguments -join ' ')" -ForegroundColor Magenta
         } else {
             Write-Host "Setting repository topics..." -ForegroundColor Cyan
-            Invoke-Expression $cmd
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "✅ Repository topics updated" -ForegroundColor Green
-            } else {
-                Write-Warning "Failed to update repository topics"
+            try {
+                & gh @arguments
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "✅ Repository topics updated" -ForegroundColor Green
+                } else {
+                    Write-Warning "Failed to update repository topics (exit code: $LASTEXITCODE)"
+                }
+            }
+            catch {
+                Write-Error "Failed to execute gh command: $_"
             }
         }
     }
@@ -228,15 +238,20 @@ function Enable-SecurityFeatures {
     Write-Host "`n--- Security Features ---" -ForegroundColor Yellow
     
     if ($SecurityConfig.vulnerability_alerts) {
-        $cmd = "gh api repos/$Repository/vulnerability-alerts --method PUT"
+        $arguments = @("api", "repos/$Repository/vulnerability-alerts", "--method", "PUT")
         
         if ($DryRun) {
-            Write-Host "DRY RUN: $cmd" -ForegroundColor Magenta
+            Write-Host "DRY RUN: gh $($arguments -join ' ')" -ForegroundColor Magenta
         } else {
             Write-Host "Enabling vulnerability alerts..." -ForegroundColor Cyan
-            Invoke-Expression $cmd
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "✅ Vulnerability alerts enabled" -ForegroundColor Green
+            try {
+                & gh @arguments
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "✅ Vulnerability alerts enabled" -ForegroundColor Green
+                }
+            }
+            catch {
+                Write-Warning "Failed to enable vulnerability alerts: $_"
             }
         }
     }
@@ -249,15 +264,20 @@ function Enable-SecurityFeatures {
     
     foreach ($feature in $securityFeatures) {
         if ($SecurityConfig.security_and_analysis.($feature.name).status -eq "enabled") {
-            $cmd = "gh api repos/$Repository/$($feature.endpoint) --method PUT"
+            $arguments = @("api", "repos/$Repository/$($feature.endpoint)", "--method", "PUT")
             
             if ($DryRun) {
-                Write-Host "DRY RUN: $cmd" -ForegroundColor Magenta
+                Write-Host "DRY RUN: gh $($arguments -join ' ')" -ForegroundColor Magenta
             } else {
                 Write-Host "Enabling $($feature.name)..." -ForegroundColor Cyan
-                Invoke-Expression $cmd 2>$null
-                if ($LASTEXITCODE -eq 0) {
-                    Write-Host "✅ $($feature.name) enabled" -ForegroundColor Green
+                try {
+                    & gh @arguments 2>$null
+                    if ($LASTEXITCODE -eq 0) {
+                        Write-Host "✅ $($feature.name) enabled" -ForegroundColor Green
+                    }
+                }
+                catch {
+                    Write-Warning "Failed to enable $($feature.name): $_"
                 }
             }
         }
