@@ -109,6 +109,9 @@ jobs:
     runs-on: windows-latest
     needs: [test, build, security-scan]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    permissions:
+      contents: write
+      packages: write
     
     steps:
     - name: Checkout code
