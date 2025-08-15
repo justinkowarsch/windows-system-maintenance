@@ -7,7 +7,7 @@
             "command": "pwsh",
             "args": [
                 "-Command",
-                "Invoke-Pester -Path '.\\tests' -Output Detailed"
+                "Invoke-Pester '.\\tests\\unit\\Configuration.Simple.Tests.ps1'"
             ],
             "group": "test",
             "presentation": {

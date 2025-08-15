@@ -1,0 +1,153 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/jkowa/windows-system-maintenance/schemas/maintenance-config.json",
+  "title": "Windows System Maintenance Configuration",
+  "description": "Configuration schema for Windows System Maintenance scripts",
+  "type": "object",
+  "properties": {
+    "Notifications": {
+      "type": "object",
+      "description": "Notification settings for maintenance operations",
+      "properties": {
+        "NotifyOnCompletion": {
+          "type": "boolean",
+          "description": "Show notification when maintenance completes successfully",
+          "default": false
+        },
+        "EnableToastNotifications": {
+          "type": "boolean", 
+          "description": "Enable Windows toast notifications",
+          "default": true
+        },
+        "NotifyOnErrors": {
+          "type": "boolean",
+          "description": "Show notification when errors occur",
+          "default": true
+        },
+        "NotifyOnSkipped": {
+          "type": "boolean",
+          "description": "Show notification when operations are skipped",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "FeatureFlags": {
+      "type": "object",
+      "description": "Feature toggles for maintenance functionality",
+      "properties": {
+        "EnableRegistryBackup": {
+          "type": "boolean",
+          "description": "Create registry backups before modifications",
+          "default": true
+        },
+        "EnableProgressIndicators": {
+          "type": "boolean",
+          "description": "Show progress bars during operations",
+          "default": true
+        },
+        "EnableRetryLogic": {
+          "type": "boolean",
+          "description": "Retry failed operations with progressive delays",
+          "default": true
+        },
+        "EnableSafetyChecks": {
+          "type": "boolean",
+          "description": "Perform safety validation before operations",
+          "default": true
+        },
+        "EnablePerformanceMonitoring": {
+          "type": "boolean",
+          "description": "Monitor system performance during maintenance",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "Logging": {
+      "type": "object",
+      "description": "Logging configuration",
+      "properties": {
+        "VerboseLogging": {
+          "type": "boolean",
+          "description": "Enable detailed logging output",
+          "default": true
+        },
+        "LogRetention": {
+          "type": "integer",
+          "description": "Number of days to retain log files",
+          "minimum": 1,
+          "maximum": 365,
+          "default": 30
+        }
+      },
+      "additionalProperties": false
+    },
+    "SafetyLimits": {
+      "type": "object",
+      "description": "Safety limits for maintenance operations",
+      "properties": {
+        "RetryDelaySeconds": {
+          "type": "integer",
+          "description": "Base delay in seconds between retry attempts",
+          "minimum": 1,
+          "maximum": 60,
+          "default": 2
+        },
+        "MaxCleanupSizeMB": {
+          "type": "integer",
+          "description": "Maximum size in MB for cleanup operations",
+          "minimum": 100,
+          "maximum": 10000,
+          "default": 2000
+        },
+        "MaxRetryAttempts": {
+          "type": "integer",
+          "description": "Maximum number of retry attempts for failed operations",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 3
+        }
+      },
+      "additionalProperties": false
+    },
+    "SmartScheduling": {
+      "type": "object",
+      "description": "Smart scheduling configuration",
+      "properties": {
+        "UseWindowsMaintenanceWindow": {
+          "type": "boolean",
+          "description": "Respect Windows automatic maintenance window",
+          "default": true
+        },
+        "MaxCpuUsageThreshold": {
+          "type": "integer",
+          "description": "Maximum CPU usage percentage to allow maintenance",
+          "minimum": 10,
+          "maximum": 100,
+          "default": 50
+        },
+        "MaxMemoryUsageThreshold": {
+          "type": "integer",
+          "description": "Maximum memory usage percentage to allow maintenance",
+          "minimum": 10,
+          "maximum": 100,
+          "default": 80
+        },
+        "EnableUsageBasedScheduling": {
+          "type": "boolean",
+          "description": "Adjust scheduling based on system usage patterns",
+          "default": true
+        },
+        "AvoidHighUsagePeriods": {
+          "type": "boolean",
+          "description": "Skip maintenance during high system usage",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["Notifications", "FeatureFlags", "Logging", "SafetyLimits", "SmartScheduling"],
+  "additionalProperties": false
+}
