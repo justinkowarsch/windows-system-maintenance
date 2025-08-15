@@ -1,19 +1,22 @@
 # Windows System Maintenance - Claude Code Instructions
 
-*Professional PowerShell system maintenance suite with enterprise features*
+_Enterprise-grade PowerShell system maintenance suite with professional CI/CD and security_
 
 ## 🎯 Project Overview
 
-This is a **production-grade Windows 11 system maintenance framework** designed for gaming/coding workstations. Features include enhanced retry logic, HP Service Guardian, smart scheduling, and comprehensive logging.
+This is a **production-ready, open-source Windows 11 system maintenance framework** designed for gaming/coding workstations. Now features enterprise-grade CI/CD pipeline, automated testing, security scanning, and branch protection.
 
-**Target System:** HP OMEN Gaming Laptop (RTX 4070, 32GB RAM, 1TB SSD)
-**Version:** 2.0.0 (Semantic Versioning)
+**Public Repository:** https://github.com/justinkowarsch/windows-system-maintenance  
+**Target System:** HP OMEN Gaming Laptop (RTX 4070, 32GB RAM, 1TB SSD)  
+**Current Version:** 2.0.2+ (Automated Semantic Versioning)  
+**Development Status:** Professional open-source project with contributors welcome
 
 ---
 
 ## 🚀 Development Commands
 
 ### Core Operations
+
 ```powershell
 # Test maintenance functionality
 .\scripts\core\system-maintenance.ps1 -QuickClean
@@ -22,20 +25,48 @@ This is a **production-grade Windows 11 system maintenance framework** designed 
 # HP Service Guardian
 .\scripts\utilities\nuke-bloatware.ps1
 
-# Scheduler management  
+# Scheduler management
 .\scripts\core\setup-maintenance-schedule.ps1 -Status
 ```
 
-### Development Workflow
+### Professional Development Workflow
+
 ```powershell
-# Run tests (Pester framework)
-Invoke-Pester -Path .\tests
+# NEW: All development now uses feature branches due to branch protection
 
-# Build and validate
-.\build\Build-Scripts.ps1
-.\build\Sign-Scripts.ps1
+# 1. Create feature branch
+git checkout -b feature/my-improvement
 
-# Check configuration
+# 2. Run tests (comprehensive Pester framework)
+.\build\Build.ps1 -Test
+
+# 3. Build and validate everything
+.\build\Build.ps1 -All   # Tests, builds, signs, packages, updates changelog
+
+# 4. Push feature branch
+git add .
+git commit -m "Add my improvement"
+git push origin feature/my-improvement
+
+# 5. Create Pull Request via GitHub (master branch is protected!)
+# 6. Wait for CI/CD pipeline to pass (required before merge)
+# 7. Get code review approval (required before merge)
+# 8. Merge via GitHub interface
+```
+
+### Quick Commands (Local Development)
+
+```powershell
+# Test only
+.\build\Build.ps1 -Test
+
+# Build only
+.\build\Build.ps1 -Package
+
+# Update version and changelog
+.\build\Build.ps1 -UpdateVersion
+
+# Configuration validation
 Get-Content .\config\maintenance-config.default.json | ConvertFrom-Json
 ```
 
@@ -44,8 +75,9 @@ Get-Content .\config\maintenance-config.default.json | ConvertFrom-Json
 ## 📁 Architecture
 
 ### Directory Structure
+
 - **`scripts/core/`** - Main maintenance scripts (system-maintenance.ps1, scheduler)
-- **`scripts/utilities/`** - Supporting tools (bloatware removal, HP monitoring) 
+- **`scripts/utilities/`** - Supporting tools (bloatware removal, HP monitoring)
 - **`scripts/profile/`** - PowerShell profile management
 - **`config/`** - Configuration templates and defaults
 - **`data/`** - Runtime data (logs, reports, backups) - gitignored
@@ -54,21 +86,28 @@ Get-Content .\config\maintenance-config.default.json | ConvertFrom-Json
 - **`build/`** - Build, signing, and packaging scripts
 
 ### Key Components
+
 1. **Enhanced Retry Logic** - 3-attempt cleanup with progressive delays
 2. **HP Service Guardian** - Automatic bloatware service monitoring
 3. **Smart Scheduling** - Usage-aware maintenance timing
 4. **Comprehensive Logging** - File-based logs with audit trails
 5. **Safety Systems** - Registry backup and rollback capabilities
+6. **🚀 NEW: CI/CD Pipeline** - Automated testing, security scanning, releases
+7. **🚀 NEW: Branch Protection** - Master branch locked, PR workflow required
+8. **🚀 NEW: Security Scanning** - PowerShell Script Analyzer, secret detection
+9. **🚀 NEW: Automated Releases** - GitHub releases with semantic versioning
 
 ---
 
 ## 🔧 Configuration System
 
 ### Configuration Files
+
 - **Default Config**: `config/maintenance-config.default.json` (version controlled)
 - **User Config**: `$env:LOCALAPPDATA\WindowsSystemMaintenance\config.json` (personal)
 
 ### Feature Flags
+
 - `EnableProgressIndicators`: Real-time progress bars
 - `EnablePerformanceMonitoring`: Before/after system health checks
 - `EnableRetryLogic`: Enhanced retry with individual file cleanup
@@ -80,11 +119,12 @@ Get-Content .\config\maintenance-config.default.json | ConvertFrom-Json
 ## 🧪 Testing
 
 ### Test Categories
+
 ```powershell
 # Unit tests
 Invoke-Pester -Path .\tests\unit\
 
-# Integration tests  
+# Integration tests
 Invoke-Pester -Path .\tests\integration\
 
 # Specific test suites
@@ -93,6 +133,7 @@ Invoke-Pester -Path .\tests\unit\HPServiceGuardian.Tests.ps1
 ```
 
 ### Test Coverage
+
 - System requirement validation
 - Configuration loading and validation
 - Retry logic with simulated failures
@@ -105,17 +146,55 @@ Invoke-Pester -Path .\tests\unit\HPServiceGuardian.Tests.ps1
 ## 🛡️ Security & Safety
 
 ### Code Signing
+
 - Scripts are digitally signed with local certificates
 - Signature validation before execution
 - Certificate management in build pipeline
 
 ### Safety Features
+
 - **Registry Backup**: Automatic backup before registry changes
 - **Rollback System**: Full rollback capability for all changes
 - **Safety Limits**: Configurable file size and operation limits
 - **Dependency Validation**: System requirements checked before execution
 
-### Security Validation
+### 🚀 NEW: GitHub Security & CI/CD Pipeline
+
+#### Branch Protection (ACTIVE)
+
+- ✅ **Master branch is protected** - Direct pushes blocked for everyone (including repository owner)
+- ✅ **Pull request required** - All changes must go through PR workflow
+- ✅ **Code review required** - 1 approver minimum before merge
+- ✅ **CI/CD must pass** - Tests, security scan, and build must succeed
+- ✅ **Conversation resolution** - All PR comments must be resolved
+
+#### CI/CD Pipeline Features
+
+```yaml
+# Automated on every push/PR:
+✅ Unit Tests (Pester framework)
+✅ Security Scanning (PowerShell Script Analyzer)
+✅ Build & Package (automated artifacts)
+✅ Code Signing (local certificates)
+✅ Automated Releases (semantic versioning)
+```
+
+#### Repository Security
+
+```powershell
+# GitHub repository configuration
+.\.github\setup-repository.ps1 -Status    # Check current protection
+.\.github\setup-repository.ps1 -DryRun   # Preview configuration changes
+
+# Security features enabled:
+✅ Secret scanning with push protection
+✅ Vulnerability alerts and dependency graph
+✅ Automated security updates (Dependabot)
+✅ Branch protection with admin enforcement
+```
+
+#### Local Security Validation
+
 ```powershell
 # Verify signatures
 Get-AuthenticodeSignature .\scripts\core\*.ps1
@@ -132,11 +211,13 @@ Test-Path $env:TEMP -PathType Container
 ## 📊 Monitoring & Logging
 
 ### Log Locations
+
 - **Maintenance Logs**: `data\logs\maintenance-*.log`
 - **System Reports**: `data\reports\system-health-*.json`
 - **Operation History**: `data\logs\cleanup-history.json`
 
 ### Health Monitoring
+
 ```powershell
 # View recent operations
 Get-Content "data\logs\maintenance-*.log" | Select-Object -Last 20
@@ -153,12 +234,14 @@ Get-Service | Where-Object { $_.Name -like "*HP*" } | Select-Object Name, Status
 ## 🚀 Performance Optimizations
 
 ### Gaming Workstation Tuning
+
 - **RTX 4070 Optimization**: GPU-aware cleanup and optimization
-- **32GB RAM Management**: Memory-efficient operations for high-RAM systems  
+- **32GB RAM Management**: Memory-efficient operations for high-RAM systems
 - **SSD Optimization**: TRIM-based operations, avoids defragmentation
 - **Gaming Mode Integration**: Windows Game Mode and power plan optimization
 
 ### Development Environment
+
 - **Node.js Cache Management**: Automated npm, yarn cache cleanup
 - **Browser Cache Cleanup**: Chrome, Edge, Firefox development cache management
 - **Docker Integration**: Container and image cleanup (if installed)
@@ -169,6 +252,7 @@ Get-Service | Where-Object { $_.Name -like "*HP*" } | Select-Object Name, Status
 ## 📋 Common Tasks
 
 ### Maintenance Operations
+
 ```powershell
 # Quick cleanup (most common)
 .\scripts\core\system-maintenance.ps1 -QuickClean
@@ -184,6 +268,7 @@ Get-Service | Where-Object { $_.Name -like "*HP*" } | Select-Object Name, Status
 ```
 
 ### Troubleshooting
+
 ```powershell
 # System health check
 .\scripts\core\system-maintenance.ps1 -Report
@@ -203,25 +288,28 @@ Get-Content "data\logs\maintenance-*.log" | Where-Object { $_ -like "*ERROR*" }
 ## 🔄 Integration
 
 ### PowerShell Profile Integration
+
 The system integrates with PowerShell 7 profile at:
 `C:\Users\jkowa\OneDrive\Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
 
 **Profile Aliases:**
+
 - `qc` → Quick-Clean
-- `fm` → Full-Maintenance  
+- `fm` → Full-Maintenance
 - `go` → Game-Optimize
 - `dev` → Dev-Optimize
 - `sr` → System-Report
 - `hpchk` → HP Service Guardian
 
 ### Scheduled Task Integration
+
 ```powershell
 # Install automated scheduling
 .\scripts\core\setup-maintenance-schedule.ps1 -Install
 
 # Tasks created:
 # - Daily Cleanup (7:00 AM)
-# - Gaming Optimize (On startup)  
+# - Gaming Optimize (On startup)
 # - Dev Cleanup (Weekly Monday 6:00 AM)
 # - Full Maintenance (Weekly Sunday 2:00 AM)
 # - System Report (Monthly 3:00 AM)
@@ -232,6 +320,7 @@ The system integrates with PowerShell 7 profile at:
 ## 🎯 Development Guidelines
 
 ### Code Standards
+
 - **PowerShell 7.5.2** required (not legacy 5.1)
 - **Error Handling**: Comprehensive try/catch with logging
 - **Progress Indicators**: User feedback for long operations
@@ -239,13 +328,15 @@ The system integrates with PowerShell 7 profile at:
 - **Configuration Driven**: Feature flags and configurable limits
 
 ### Contributing
+
 1. **Branching**: Create feature branches for new functionality
 2. **Testing**: Add Pester tests for new features
-3. **Documentation**: Update relevant docs and changelog  
+3. **Documentation**: Update relevant docs and changelog
 4. **Signing**: Ensure scripts are properly signed
 5. **Validation**: Test on target system before merging
 
 ### Version Management
+
 - **Semantic Versioning**: MAJOR.MINOR.PATCH
 - **Automated Changelog**: Track features, fixes, security updates
 - **Git Tags**: Tag releases with version numbers
@@ -256,12 +347,14 @@ The system integrates with PowerShell 7 profile at:
 ## 💡 Next Steps / Roadmap
 
 ### Phase 5: Advanced Monitoring
+
 - **Performance Metrics**: Historical performance tracking
 - **Predictive Maintenance**: AI-based maintenance scheduling
 - **Alert System**: Proactive issue detection
 - **Dashboard**: Web-based system health dashboard
 
 ### Phase 6: Multi-System Support
+
 - **Configuration Profiles**: Different configs for different machine types
 - **Remote Management**: Network-based maintenance for multiple systems
 - **Backup Integration**: Cloud backup integration
@@ -269,4 +362,4 @@ The system integrates with PowerShell 7 profile at:
 
 ---
 
-*This maintenance system represents a professional-grade solution for Windows 11 gaming/coding workstations, with enterprise reliability and zero-downtime operations.*
+_This maintenance system represents a professional-grade solution for Windows 11 gaming/coding workstations, with enterprise reliability and zero-downtime operations._

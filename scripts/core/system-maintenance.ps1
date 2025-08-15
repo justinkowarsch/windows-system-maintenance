@@ -509,6 +509,17 @@ function Update-CleanupHistory {
     $history = Get-CleanupHistory
     $pathKey = $Path.Replace('\\', '_').Replace(':', '')
     
+    # Ensure history is a proper hashtable
+    if ($history -isnot [hashtable]) {
+        $newHistory = @{}
+        if ($history) {
+            foreach ($prop in $history.PSObject.Properties) {
+                $newHistory[$prop.Name] = $prop.Value
+            }
+        }
+        $history = $newHistory
+    }
+    
     $history[$pathKey] = @{
         Path = $Path
         LastCleaned = Get-Date
@@ -537,12 +548,20 @@ function Test-RecentlyCleanedPath {
     $pathKey = $Path.Replace('\\', '_').Replace(':', '')
     
     if ($history.PSObject.Properties.Name -contains $pathKey) {
-        $lastCleaned = [DateTime]$history[$pathKey].LastCleaned
-        $hoursSince = ((Get-Date) - $lastCleaned).TotalHours
-        
-        if ($hoursSince -lt $MinHoursSinceLastCleanup) {
-            Write-Log "Path recently cleaned $([math]::Round($hoursSince, 1)) hours ago: $Path"
-            return $true
+        $lastCleanedValue = $history[$pathKey].LastCleaned
+        if ($lastCleanedValue -and $lastCleanedValue -ne "") {
+            try {
+                $lastCleaned = [DateTime]$lastCleanedValue
+                $hoursSince = ((Get-Date) - $lastCleaned).TotalHours
+                
+                if ($hoursSince -lt $MinHoursSinceLastCleanup) {
+                    Write-Log "Path recently cleaned $([math]::Round($hoursSince, 1)) hours ago: $Path"
+                    return $true
+                }
+            }
+            catch {
+                Write-Log "Invalid date format in cleanup history for $Path, ignoring previous cleanup time" "WARN"
+            }
         }
     }
     
@@ -1447,6 +1466,7 @@ if ($totalErrors -gt 0) {
 } else {
     Write-Log "Script completed successfully!" "INFO"
     exit 0
+}
 
 # SIG # Begin signature block
 # MIIcKQYJKoZIhvcNAQcCoIIcGjCCHBYCAQExDzANBglghkgBZQMEAgEFADB5Bgor
