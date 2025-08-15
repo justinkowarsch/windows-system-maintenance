@@ -1,0 +1,31 @@
+{
+  "Notifications": {
+    "NotifyOnCompletion": false,
+    "EnableToastNotifications": true,
+    "NotifyOnErrors": true,
+    "NotifyOnSkipped": false
+  },
+  "FeatureFlags": {
+    "EnableRegistryBackup": true,
+    "EnableProgressIndicators": true,
+    "EnableRetryLogic": true,
+    "EnableSafetyChecks": true,
+    "EnablePerformanceMonitoring": true
+  },
+  "Logging": {
+    "VerboseLogging": true,
+    "LogRetention": 30
+  },
+  "SafetyLimits": {
+    "RetryDelaySeconds": 2,
+    "MaxCleanupSizeMB": 2000,
+    "MaxRetryAttempts": 3
+  },
+  "SmartScheduling": {
+    "UseWindowsMaintenanceWindow": true,
+    "MaxCpuUsageThreshold": 50,
+    "MaxMemoryUsageThreshold": 80,
+    "EnableUsageBasedScheduling": true,
+    "AvoidHighUsagePeriods": true
+  }
+}
