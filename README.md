@@ -5,6 +5,9 @@
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.5.2-blue.svg)](https://github.com/PowerShell/PowerShell)
 [![Windows](https://img.shields.io/badge/Windows-11-blue.svg)](https://www.microsoft.com/windows)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![GitHub release](https://img.shields.io/github/v/release/justinkowarsch/windows-system-maintenance)](https://github.com/justinkowarsch/windows-system-maintenance/releases)
+[![GitHub issues](https://img.shields.io/github/issues/justinkowarsch/windows-system-maintenance)](https://github.com/justinkowarsch/windows-system-maintenance/issues)
+[![GitHub stars](https://img.shields.io/github/stars/justinkowarsch/windows-system-maintenance)](https://github.com/justinkowarsch/windows-system-maintenance/stargazers)
 
 ## ✨ Features
 
@@ -19,12 +22,18 @@
 
 ### Installation
 ```powershell
-# Clone or download to your code directory
-git clone <repository-url> C:\Users\<username>\code\windows-system-maintenance
+# Clone the repository
+git clone https://github.com/justinkowarsch/windows-system-maintenance.git
+cd windows-system-maintenance
 
-# Run installation helper
+# Run installation helper (coming soon)
 .\tools\Install-MaintenanceSystem.ps1
 ```
+
+**Alternative: Download from GitHub**
+1. Visit [https://github.com/justinkowarsch/windows-system-maintenance](https://github.com/justinkowarsch/windows-system-maintenance)
+2. Click **"Code" → "Download ZIP"**
+3. Extract to your preferred location
 
 ### Daily Usage
 ```powershell
@@ -98,13 +107,35 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🤝 Contributing
 
-This is a personal system maintenance project. For issues or suggestions, please create an issue in the repository.
+Contributions are welcome! This project is now open source.
+
+### How to Contribute
+1. **Fork** the repository
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Make your changes** and ensure tests pass: `.\build\Build.ps1 -Test`
+4. **Commit your changes**: `git commit -m 'Add amazing feature'`
+5. **Push to branch**: `git push origin feature/amazing-feature`
+6. **Open a Pull Request**
+
+### Development Setup
+```powershell
+# Clone and set up
+git clone https://github.com/justinkowarsch/windows-system-maintenance.git
+cd windows-system-maintenance
+
+# Run tests
+.\build\Build.ps1 -Test
+
+# Build everything
+.\build\Build.ps1 -All
+```
 
 ## 📞 Support
 
-- **Documentation**: See `docs/` directory
+- **GitHub Issues**: [Report bugs or request features](https://github.com/justinkowarsch/windows-system-maintenance/issues)
+- **GitHub Discussions**: [Community support and ideas](https://github.com/justinkowarsch/windows-system-maintenance/discussions)
+- **Documentation**: See `docs/` directory (coming soon)
 - **Logs**: Check `data/logs/` for detailed operation logs
-- **Issues**: Use GitHub issues for bug reports
 
 ---
 

@@ -1,0 +1,192 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup PowerShell
+      shell: pwsh
+      run: |
+        Write-Host "PowerShell version: $($PSVersionTable.PSVersion)"
+        
+    - name: Install Pester
+      shell: pwsh
+      run: |
+        if (-not (Get-Module -ListAvailable -Name Pester)) {
+          Install-Module -Name Pester -Force -SkipPublisherCheck
+        }
+        Import-Module Pester
+        
+    - name: Run unit tests
+      shell: pwsh
+      run: |
+        .\build\Build.ps1 -Test
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: |
+          tests/
+          *.log
+
+  build:
+    name: Build and Package
+    runs-on: windows-latest
+    needs: test
+    if: github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Build project
+      shell: pwsh
+      run: |
+        .\build\Build.ps1 -Package
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-maintenance-package
+        path: dist/
+        
+    - name: Check for version changes
+      id: version-check
+      shell: pwsh
+      run: |
+        $version = (Get-Content version.json | ConvertFrom-Json).version
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+        echo "Current version: $version"
+
+  security-scan:
+    name: Security Scan
+    runs-on: windows-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run PowerShell Script Analyzer
+      shell: pwsh
+      run: |
+        if (-not (Get-Module -ListAvailable -Name PSScriptAnalyzer)) {
+          Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck
+        }
+        
+        $results = @()
+        Get-ChildItem -Path scripts -Filter "*.ps1" -Recurse | ForEach-Object {
+          $analysis = Invoke-ScriptAnalyzer -Path $_.FullName -Severity Error,Warning
+          if ($analysis) {
+            $results += $analysis
+          }
+        }
+        
+        if ($results.Count -gt 0) {
+          Write-Host "Script Analyzer found issues:" -ForegroundColor Red
+          $results | Format-Table -AutoSize
+          exit 1
+        } else {
+          Write-Host "✅ No Script Analyzer issues found" -ForegroundColor Green
+        }
+
+  release:
+    name: Create Release
+    runs-on: windows-latest
+    needs: [test, build, security-scan]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-maintenance-package
+        path: dist/
+        
+    - name: Get version info
+      id: version
+      shell: pwsh
+      run: |
+        $versionInfo = Get-Content version.json | ConvertFrom-Json
+        $version = $versionInfo.version
+        $buildInfo = $versionInfo.build
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+        echo "build=$buildInfo" >> $env:GITHUB_OUTPUT
+        
+        # Check if this version already has a release
+        $tagExists = git tag -l "v$version"
+        if ($tagExists) {
+          echo "skip=true" >> $env:GITHUB_OUTPUT
+          Write-Host "Tag v$version already exists, skipping release"
+        } else {
+          echo "skip=false" >> $env:GITHUB_OUTPUT
+          Write-Host "Creating new release for v$version"
+        }
+        
+    - name: Create GitHub Release
+      if: steps.version.outputs.skip == 'false'
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ steps.version.outputs.version }}
+        release_name: Windows System Maintenance v${{ steps.version.outputs.version }}
+        body: |
+          ## Windows System Maintenance v${{ steps.version.outputs.version }}
+          
+          **Build**: ${{ steps.version.outputs.build }}
+          
+          ### 📦 Installation
+          
+          ```powershell
+          # Download and extract the release
+          # Or clone the repository:
+          git clone https://github.com/justinkowarsch/windows-system-maintenance.git
+          ```
+          
+          ### 🚀 Quick Start
+          
+          ```powershell
+          # Quick cleanup
+          .\scripts\core\system-maintenance.ps1 -QuickClean
+          
+          # Full maintenance
+          .\scripts\core\system-maintenance.ps1 -FullMaintenance
+          ```
+          
+          ### 📋 Changes
+          
+          See [CHANGELOG.md](https://github.com/justinkowarsch/windows-system-maintenance/blob/master/CHANGELOG.md) for detailed release notes.
+          
+          ---
+          
+          **🎯 Optimized for Windows 11 gaming/coding workstations**
+        draft: false
+        prerelease: false
+        
+    - name: Upload Release Asset
+      if: steps.version.outputs.skip == 'false'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create-release.outputs.upload_url }}
+        asset_path: dist/
+        asset_name: windows-system-maintenance-v${{ steps.version.outputs.version }}.zip
+        asset_content_type: application/zip
