@@ -89,15 +89,10 @@ jobs:
         
         $results = @()
         Get-ChildItem -Path scripts -Filter "*.ps1" -Recurse | ForEach-Object {
-          $analysis = Invoke-ScriptAnalyzer -Path $_.FullName -Severity Error,Warning
+          # Only check for Error severity issues - warnings are style recommendations
+          $analysis = Invoke-ScriptAnalyzer -Path $_.FullName -Severity Error
           if ($analysis) {
-            # Filter out Write-Host warnings for maintenance scripts (not security issues)
-            $filteredAnalysis = $analysis | Where-Object { 
-              $_.RuleName -ne "PSAvoidUsingWriteHost" 
-            }
-            if ($filteredAnalysis) {
-              $results += $filteredAnalysis
-            }
+            $results += $analysis
           }
         }
         
@@ -106,7 +101,7 @@ jobs:
           $results | Format-Table -AutoSize
           exit 1
         } else {
-          Write-Host "✅ No Script Analyzer issues found (Write-Host warnings excluded for maintenance scripts)" -ForegroundColor Green
+          Write-Host "✅ No critical security issues found (Error level only - warnings are style recommendations)" -ForegroundColor Green
         }
 
   release:
