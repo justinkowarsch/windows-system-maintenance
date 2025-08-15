@@ -1,7 +1,7 @@
 {
-  "version": "2.0.1",
-  "build": "build-20250815-083650",
-  "lastUpdate": "2025-08-15T08:36:50Z",
+  "version": "2.0.2",
+  "build": "build-20250815-085106",
+  "lastUpdate": "2025-08-15T08:51:06Z",
   "features": [
     "enhanced-retry-logic",
     "hp-service-guardian",
@@ -12,6 +12,7 @@
     "safety-checks"
   ],
   "changelog": {
-    "2.0.0": "Major refactoring with Git repository structure, enhanced retry logic, HP Service Guardian"
+    "2.0.0": "Major refactoring with Git repository structure, enhanced retry logic, HP Service Guardian",
+    "2.0.2": "Testing framework, build automation, path fixes, VS Code integration"
   }
 }

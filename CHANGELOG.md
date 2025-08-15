@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.2] - 2025-08-15
+
+### Added
+- Comprehensive Pester testing framework with 12 unit tests
+- Enterprise-grade build automation with version management
+- JSON schema validation for configuration files
+- Distribution packaging with automated installer
+- Automated changelog generation in build process
+
+### Fixed
+- Critical path resolution in scheduler script (PSScriptRoot vs USERPROFILE)
+- VS Code task integration and launch configurations
+- Pester v3.4.0 compatibility for testing framework
+
+### Changed
+- Automated code signing for all PowerShell scripts
+- Enhanced VS Code workspace with proper task definitions
+- Version management now updates both version.json and CHANGELOG.md
+
 ## [2.0.0] - 2025-08-14
 
 ### Added

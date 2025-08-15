@@ -90,11 +90,102 @@ function Update-Version {
         $VersionInfo | ConvertTo-Json -Depth 3 | Out-File $VersionFile -Encoding UTF8
         
         Write-Host "Version updated: $currentVersion → $newVersion" -ForegroundColor Green
+        
+        # Update changelog files
+        Update-Changelog -Version $newVersion
+        
         return $newVersion
     }
     catch {
         Write-Error "Version update failed: $_"
         return $null
+    }
+}
+
+function Update-Changelog {
+    param(
+        [string]$Version
+    )
+    
+    Write-Host "`n--- Updating Changelog ---" -ForegroundColor Yellow
+    
+    try {
+        $changelogPath = Join-Path $ProjectRoot "CHANGELOG.md"
+        $currentDate = Get-Date -Format "yyyy-MM-dd"
+        
+        # Define the changes for this version based on what we actually built
+        $changelogEntry = @"
+## [$Version] - $currentDate
+
+### Added
+- Comprehensive Pester testing framework with 12 unit tests
+- Enterprise-grade build automation with version management
+- JSON schema validation for configuration files
+- Distribution packaging with automated installer
+- Automated changelog generation in build process
+
+### Fixed
+- Critical path resolution in scheduler script (PSScriptRoot vs USERPROFILE)
+- VS Code task integration and launch configurations
+- Pester v3.4.0 compatibility for testing framework
+
+### Changed
+- Automated code signing for all PowerShell scripts
+- Enhanced VS Code workspace with proper task definitions
+- Version management now updates both version.json and CHANGELOG.md
+
+"@
+
+        if (Test-Path $changelogPath) {
+            # Read existing changelog
+            $existingContent = Get-Content $changelogPath -Raw
+            
+            # Find the insertion point (after the header but before first version)
+            $headerEnd = $existingContent.IndexOf("## [")
+            if ($headerEnd -gt 0) {
+                $header = $existingContent.Substring(0, $headerEnd)
+                $existingVersions = $existingContent.Substring($headerEnd)
+                
+                # Insert new version entry
+                $newContent = $header + $changelogEntry + "`n" + $existingVersions
+            } else {
+                # If no existing versions, append after header
+                $newContent = $existingContent + "`n`n" + $changelogEntry
+            }
+            
+            # Write updated changelog
+            $newContent | Out-File $changelogPath -Encoding UTF8
+            Write-Host "📝 Updated CHANGELOG.md with version $Version" -ForegroundColor Green
+        } else {
+            Write-Warning "CHANGELOG.md not found at $changelogPath"
+        }
+        
+        # Update version.json changelog section
+        $versionJsonPath = Join-Path $ProjectRoot "version.json"
+        if (Test-Path $versionJsonPath) {
+            $versionData = Get-Content $versionJsonPath | ConvertFrom-Json
+            
+            # Add short changelog entry to version.json
+            $shortDescription = "Testing framework, build automation, path fixes, VS Code integration"
+            
+            # Ensure changelog property exists
+            if (-not $versionData.changelog) {
+                $versionData | Add-Member -NotePropertyName "changelog" -NotePropertyValue @{}
+            }
+            
+            # Add new version entry
+            $versionData.changelog | Add-Member -NotePropertyName $Version -NotePropertyValue $shortDescription -Force
+            
+            # Save updated version.json
+            $versionData | ConvertTo-Json -Depth 3 | Out-File $versionJsonPath -Encoding UTF8
+            Write-Host "📝 Updated version.json changelog section" -ForegroundColor Green
+        }
+        
+        return $true
+    }
+    catch {
+        Write-Error "Changelog update failed: $_"
+        return $false
     }
 }
 
