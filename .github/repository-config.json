@@ -1,0 +1,99 @@
+{
+  "repository": {
+    "name": "windows-system-maintenance",
+    "description": "Professional-grade PowerShell system maintenance scripts for Windows 11 gaming/coding workstations",
+    "homepage": "https://github.com/justinkowarsch/windows-system-maintenance",
+    "topics": [
+      "powershell",
+      "windows-11",
+      "system-maintenance",
+      "automation",
+      "gaming-workstation",
+      "windows-optimization",
+      "powershell-scripts",
+      "system-administration"
+    ],
+    "private": false,
+    "has_issues": true,
+    "has_projects": true,
+    "has_wiki": true,
+    "has_downloads": true,
+    "default_branch": "master",
+    "allow_squash_merge": true,
+    "allow_merge_commit": false,
+    "allow_rebase_merge": true,
+    "delete_branch_on_merge": true,
+    "allow_auto_merge": true,
+    "allow_update_branch": true
+  },
+  "branch_protection": {
+    "master": {
+      "required_status_checks": {
+        "strict": true,
+        "contexts": [
+          "CI/CD Pipeline / test",
+          "CI/CD Pipeline / security-scan",
+          "CI/CD Pipeline / build"
+        ]
+      },
+      "enforce_admins": true,
+      "required_pull_request_reviews": {
+        "required_approving_review_count": 1,
+        "dismiss_stale_reviews": true,
+        "require_code_owner_reviews": false,
+        "require_last_push_approval": true
+      },
+      "restrictions": null,
+      "allow_force_pushes": false,
+      "allow_deletions": false,
+      "block_creations": false,
+      "required_conversation_resolution": true,
+      "lock_branch": false,
+      "allow_fork_syncing": true
+    }
+  },
+  "webhooks": [],
+  "environments": {
+    "production": {
+      "protection_rules": [
+        {
+          "type": "required_reviewers",
+          "reviewers": []
+        },
+        {
+          "type": "wait_timer",
+          "minutes": 5
+        }
+      ],
+      "deployment_branch_policy": {
+        "protected_branches": true,
+        "custom_branch_policies": false
+      }
+    }
+  },
+  "secrets": {
+    "actions": [
+      {
+        "name": "REPO_ACCESS_TOKEN",
+        "description": "GitHub Personal Access Token for repository operations"
+      }
+    ]
+  },
+  "security": {
+    "security_and_analysis": {
+      "secret_scanning": {
+        "status": "enabled"
+      },
+      "secret_scanning_push_protection": {
+        "status": "enabled"
+      },
+      "dependency_graph": {
+        "status": "enabled"
+      },
+      "dependabot_security_updates": {
+        "status": "enabled"
+      }
+    },
+    "vulnerability_alerts": true
+  }
+}
