@@ -1,0 +1,13 @@
+{
+    "recommendations": [
+        "ms-vscode.PowerShell",
+        "redhat.vscode-yaml",
+        "ms-vscode.vscode-json",
+        "streetsidesoftware.code-spell-checker",
+        "ms-vscode.test-adapter-converter",
+        "ms-vscode.vscode-github-issue-notebooks",
+        "github.vscode-pull-request-github",
+        "eamodio.gitlens",
+        "ms-vscode.powershell-preview"
+    ]
+}

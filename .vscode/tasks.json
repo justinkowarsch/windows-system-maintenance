@@ -1,0 +1,69 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Tests",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-Command",
+                "Invoke-Pester -Path '.\\tests' -Output Detailed"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Run Quick Cleanup",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-Command",
+                ".\\scripts\\core\\system-maintenance.ps1 -QuickClean"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Run Full Maintenance",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-Command",
+                ".\\scripts\\core\\system-maintenance.ps1 -FullMaintenance"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Build and Sign Scripts",
+            "type": "shell",
+            "command": "pwsh",
+            "args": [
+                "-Command",
+                ".\\build\\Build.ps1"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        }
+    ]
+}

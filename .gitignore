@@ -1,0 +1,54 @@
+# PowerShell
+*.ps1xml
+
+# User-specific configuration
+config/maintenance-config.json
+!config/maintenance-config.default.json
+
+# Runtime data
+data/logs/*
+data/reports/*
+data/backups/*
+!data/*/.gitkeep
+
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# VS Code user settings
+.vscode/settings.json
+.vscode/launch.json
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# Certificates and keys
+*.pfx
+*.p12
+*.key
+*.crt
+
+# Node modules (if any JS tooling)
+node_modules/
+
+# Build artifacts
+build/output/
+build/signed/
+
+# Log files
+*.log
+
+# PowerShell modules (if downloaded)
+modules/
+
+# Test results
+TestResults/
+coverage/
+
+# Backup files
+*.bak
+*.backup

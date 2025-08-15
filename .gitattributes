@@ -1,0 +1,19 @@
+# PowerShell files
+*.ps1 text eol=crlf
+*.psm1 text eol=crlf
+*.psd1 text eol=crlf
+
+# Configuration files  
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Documentation
+*.md text eol=lf
+*.txt text eol=lf
+
+# Binary files
+*.pfx binary
+*.p12 binary
+*.exe binary
+*.dll binary
