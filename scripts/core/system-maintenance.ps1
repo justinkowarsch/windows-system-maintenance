@@ -739,10 +739,11 @@ function Invoke-QuickCleanup {
     $errorCount = 0
     $healthBefore = Get-SystemHealth
     
+    Show-Progress -Activity "Quick Cleanup" -PercentComplete 0 -Status "Initializing..." | Out-Null
+    
+    # Clear temporary files (with individual error handling)
     try {
-        Show-Progress -Activity "Quick Cleanup" -PercentComplete 0 -Status "Initializing..."
-        # Clear temporary files
-        Show-Progress -Activity "Quick Cleanup" -PercentComplete 20 -Status "Clearing temporary files..."
+        Show-Progress -Activity "Quick Cleanup" -PercentComplete 20 -Status "Clearing temporary files..." | Out-Null
         Write-Log "Clearing temporary files..."
         $tempPaths = @(
             $env:TEMP,
@@ -760,49 +761,105 @@ function Invoke-QuickCleanup {
                     if (Test-RecentlyCleanedPath -Path $path -MinHoursSinceLastCleanup 6) {
                         Write-Log "Skipping recently cleaned temp path: $path" "INFO"
                     } else {
-                        Invoke-WithRetry -OperationName "Clear temp path: $path" -Operation {
-                            $beforeSize = (Get-ChildItem $path -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
-                            $itemCount = (Get-ChildItem $path -ErrorAction SilentlyContinue | Measure-Object).Count
-                            Write-Log "Removing $itemCount items from $path"
+                        try {
+                            Invoke-WithRetry -OperationName "Clear temp path: $path" -Operation {
+                                $beforeSize = (Get-ChildItem $path -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
+                                $itemCount = (Get-ChildItem $path -ErrorAction SilentlyContinue | Measure-Object).Count
+                                Write-Log "Removing $itemCount items from $path"
+                                
+                                # Enhanced cleanup: Try removing files individually if bulk removal fails
+                                try {
+                                    Get-ChildItem $path -Recurse -ErrorAction Stop | Remove-Item -Recurse -Force -ErrorAction Stop
+                                }
+                                catch {
+                                    Write-Log "Bulk removal failed, attempting individual file cleanup..." "WARN"
+                                    $removedCount = 0
+                                    $skippedCount = 0
+                                    Get-ChildItem $path -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {
+                                        try {
+                                            Remove-Item $_.FullName -Force -ErrorAction Stop
+                                            $removedCount++
+                                        }
+                                        catch {
+                                            $skippedCount++
+                                            Write-Log "Skipped locked file: $($_.Name)" "INFO"
+                                        }
+                                    }
+                                    Write-Log "Individual cleanup: $removedCount removed, $skippedCount skipped" "INFO"
+                                    if ($skippedCount -gt 0) {
+                                        throw "Some files could not be removed (locked by other processes)"
+                                    }
+                                }
+                                
+                                # Update cleanup history
+                                Update-CleanupHistory -Path $path -OperationType "TempFiles" -BytesFreed $beforeSize -FilesRemoved $itemCount | Out-Null
+                            } -MaxAttempts 3 -ProgressiveDelay $true
+                        }
+                        catch {
+                            $errorCount++
+                            Write-Log "Temp cleanup failed for $path, continuing with other operations: $($_.Exception.Message)" "WARN"
+                        }
+                    }
+                } else {
+                    # Directory exceeds size limit - fall back to age-based cleanup
+                    Write-Log "Directory too large for full cleanup, attempting age-based cleanup (7+ days old)" "INFO"
+                    try {
+                        Invoke-WithRetry -OperationName "Age-based cleanup: $path" -Operation {
+                            # Find files older than 7 days
+                            $cutoffDate = (Get-Date).AddDays(-7)
+                            $oldFiles = Get-ChildItem $path -Recurse -File -Force -ErrorAction SilentlyContinue | 
+                                Where-Object { $_.LastWriteTime -lt $cutoffDate }
                             
-                            # Enhanced cleanup: Try removing files individually if bulk removal fails
-                            try {
-                                Get-ChildItem $path -Recurse -ErrorAction Stop | Remove-Item -Recurse -Force -ErrorAction Stop
-                            }
-                            catch {
-                                Write-Log "Bulk removal failed, attempting individual file cleanup..." "WARN"
+                            if ($oldFiles) {
+                                $oldFileSize = ($oldFiles | Measure-Object Length -Sum).Sum
+                                $oldFileCount = $oldFiles.Count
+                                Write-Log "Found $oldFileCount old files ($([math]::Round($oldFileSize/1MB, 2)) MB) older than 7 days"
+                                
+                                # Remove old files
                                 $removedCount = 0
                                 $skippedCount = 0
-                                Get-ChildItem $path -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {
+                                $freedBytes = 0
+                                
+                                foreach ($file in $oldFiles) {
                                     try {
-                                        Remove-Item $_.FullName -Force -ErrorAction Stop
+                                        $fileSize = $file.Length
+                                        Remove-Item $file.FullName -Force -ErrorAction Stop
                                         $removedCount++
+                                        $freedBytes += $fileSize
                                     }
                                     catch {
                                         $skippedCount++
-                                        Write-Log "Skipped locked file: $($_.Name)" "INFO"
+                                        Write-Log "Skipped locked old file: $($file.Name)" "INFO"
                                     }
                                 }
-                                Write-Log "Individual cleanup: $removedCount removed, $skippedCount skipped" "INFO"
-                                if ($skippedCount -gt 0) {
-                                    throw "Some files could not be removed (locked by other processes)"
-                                }
+                                
+                                Write-Log "Age-based cleanup: $removedCount removed, $skippedCount skipped, $([math]::Round($freedBytes/1MB, 2)) MB freed" "INFO"
+                                
+                                # Update cleanup history
+                                Update-CleanupHistory -Path $path -OperationType "TempFiles-AgeBased" -BytesFreed $freedBytes -FilesRemoved $removedCount | Out-Null
+                            } else {
+                                Write-Log "No files older than 7 days found in $path" "INFO"
                             }
-                            
-                            # Update cleanup history
-                            Update-CleanupHistory -Path $path -OperationType "TempFiles" -BytesFreed $beforeSize -FilesRemoved $itemCount
-                        } -MaxAttempts 3 -ProgressiveDelay $true
+                        } -MaxAttempts 2
                     }
-                } else {
-                    Write-Log "Skipping unsafe path: $path - Reason: $($safetyCheck.Reason)" "WARN"
+                    catch {
+                        $errorCount++
+                        Write-Log "Age-based cleanup failed for ${path}: $($_.Exception.Message)" "WARN"
+                    }
                 }
             } else {
                 Write-Log "Path does not exist, skipping: $path" "INFO"
             }
         }
-        
-        # Clear browser caches (development-focused)
-        Show-Progress -Activity "Quick Cleanup" -PercentComplete 50 -Status "Clearing browser caches..."
+    }
+    catch {
+        $errorCount++
+        Write-Log "Error during temp file cleanup, continuing with other operations: $($_.Exception.Message)" "WARN"
+    }
+    
+    # Clear browser caches (with individual error handling)
+    try {
+        Show-Progress -Activity "Quick Cleanup" -PercentComplete 50 -Status "Clearing browser caches..." | Out-Null
         Write-Log "Clearing browser caches..."
         $browserPaths = @(
             "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cache",
@@ -816,33 +873,49 @@ function Invoke-QuickCleanup {
                 $safetyCheck = Test-SafeFileOperation -Path $path -MaxSizeMB 2000
                 
                 if ($safetyCheck.Safe) {
-                    Invoke-WithRetry -OperationName "Clear browser cache: $path" -Operation {
-                        $cacheSize = (Get-ChildItem $path -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
-                        $cacheSizeMB = [math]::Round($cacheSize / 1MB, 2)
-                        Write-Log "Clearing $cacheSizeMB MB from browser cache: $path"
-                        Get-ChildItem $path -Recurse -ErrorAction Stop | Remove-Item -Recurse -Force -ErrorAction Stop
-                    } -MaxAttempts 2
+                    try {
+                        Invoke-WithRetry -OperationName "Clear browser cache: $path" -Operation {
+                            $cacheSize = (Get-ChildItem $path -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
+                            $cacheSizeMB = [math]::Round($cacheSize / 1MB, 2)
+                            Write-Log "Clearing $cacheSizeMB MB from browser cache: $path"
+                            Get-ChildItem $path -Recurse -ErrorAction Stop | Remove-Item -Recurse -Force -ErrorAction Stop
+                        } -MaxAttempts 2
+                    }
+                    catch {
+                        $errorCount++
+                        Write-Log "Browser cache cleanup failed for $path, continuing: $($_.Exception.Message)" "WARN"
+                    }
                 } else {
                     Write-Log "Skipping unsafe browser cache: $path - Reason: $($safetyCheck.Reason)" "WARN"
                 }
             }
         }
-        
-        # Clear recycle bin with retry logic
-        Show-Progress -Activity "Quick Cleanup" -PercentComplete 70 -Status "Emptying recycle bin..."
+    }
+    catch {
+        $errorCount++
+        Write-Log "Error during browser cache cleanup, continuing: $($_.Exception.Message)" "WARN"
+    }
+    
+    # Clear recycle bin (with individual error handling)
+    try {
+        Show-Progress -Activity "Quick Cleanup" -PercentComplete 70 -Status "Emptying recycle bin..." | Out-Null
         Write-Log "Emptying recycle bin..."
         Invoke-WithRetry -OperationName "Empty Recycle Bin" -Operation {
-            # Get recycle bin size first
-            $recycleBin = Get-ChildItem -Path "C:\$Recycle.Bin" -Force -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum
-            $recycleBinSizeMB = [math]::Round($recycleBin.Sum / 1MB, 2)
-            Write-Log "Recycle bin size: $recycleBinSizeMB MB"
+            # Skip size calculation to avoid hanging - just empty the recycle bin
+            Write-Log "Emptying recycle bin (skipping size calculation for performance)"
             
             Clear-RecycleBin -Force -ErrorAction Stop
             Write-Log "Recycle bin emptied successfully"
         } -MaxAttempts 2
-        
-        # Clear DNS cache with retry logic
-        Show-Progress -Activity "Quick Cleanup" -PercentComplete 90 -Status "Flushing DNS cache..."
+    }
+    catch {
+        $errorCount++
+        Write-Log "Error during recycle bin cleanup, continuing: $($_.Exception.Message)" "WARN"
+    }
+    
+    # Clear DNS cache (with individual error handling)
+    try {
+        Show-Progress -Activity "Quick Cleanup" -PercentComplete 90 -Status "Flushing DNS cache..." | Out-Null
         Write-Log "Flushing DNS cache..."
         Invoke-WithRetry -OperationName "DNS Cache Flush" -Operation {
             try {
@@ -858,19 +931,29 @@ function Invoke-QuickCleanup {
                 }
             }
         } -MaxAttempts 3
-        
-        Show-Progress -Activity "Quick Cleanup" -PercentComplete 100 -Status "Completed successfully"
-        
-        # Measure performance impact
-        $healthAfter = Get-SystemHealth
-        Measure-PerformanceImpact -HealthBefore $healthBefore -HealthAfter $healthAfter -OperationName "Quick Cleanup"
-        
-        Write-Progress -Activity "Quick Cleanup" -Completed
-        Write-Log "Quick Cleanup completed successfully" "INFO"
     }
     catch {
         $errorCount++
-        Write-Log "Error during Quick Cleanup: $($_.Exception.Message)" "ERROR"
+        Write-Log "Error during DNS cache cleanup, continuing: $($_.Exception.Message)" "WARN"
+    }
+    
+    Show-Progress -Activity "Quick Cleanup" -PercentComplete 100 -Status "Completed" | Out-Null
+    
+    # Measure performance impact
+    try {
+        $healthAfter = Get-SystemHealth
+        Measure-PerformanceImpact -HealthBefore $healthBefore -HealthAfter $healthAfter -OperationName "Quick Cleanup" | Out-Null
+    }
+    catch {
+        Write-Log "Error measuring performance impact: $($_.Exception.Message)" "WARN"
+    }
+    
+    Write-Progress -Activity "Quick Cleanup" -Completed | Out-Null
+    
+    if ($errorCount -eq 0) {
+        Write-Log "Quick Cleanup completed successfully" "INFO"
+    } else {
+        Write-Log "Quick Cleanup completed with $errorCount errors - some operations may have failed but others succeeded" "WARN"
     }
     
     return $errorCount
@@ -884,11 +967,11 @@ function Invoke-GamingOptimization {
         # Enable Game Mode
         Write-Log "Enabling Game Mode..."
         $gameBarKey = "HKEY_CURRENT_USER\Software\Microsoft\GameBar"
-        Set-RegistryValueSafe -KeyPath $gameBarKey -ValueName "AutoGameModeEnabled" -ValueData "1" -ValueType "REG_DWORD" -Description "Enable Windows Game Mode"
+        Set-RegistryValueSafe -KeyPath $gameBarKey -ValueName "AutoGameModeEnabled" -ValueData "1" -ValueType "REG_DWORD" -Description "Enable Windows Game Mode" | Out-Null
         
         # Set High Performance power plan
         Write-Log "Setting High Performance power plan..."
-        powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
+        powercfg -setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c | Out-Null
         
         # Optimize NVIDIA settings (if NVIDIA GPU detected)
         $nvidiaGPU = Get-WmiObject Win32_VideoController | Where-Object {$_.Name -like "*NVIDIA*"}
@@ -896,7 +979,7 @@ function Invoke-GamingOptimization {
             Write-Log "NVIDIA RTX 4070 detected - optimizing GPU settings..."
             # Enable Hardware-Accelerated GPU Scheduling
             $graphicsKey = "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\GraphicsDrivers"
-            Set-RegistryValueSafe -KeyPath $graphicsKey -ValueName "HwSchMode" -ValueData "2" -ValueType "REG_DWORD" -Description "Enable Hardware-Accelerated GPU Scheduling"
+            Set-RegistryValueSafe -KeyPath $graphicsKey -ValueName "HwSchMode" -ValueData "2" -ValueType "REG_DWORD" -Description "Enable Hardware-Accelerated GPU Scheduling" | Out-Null
         }
         
         # Disable unnecessary services for gaming
